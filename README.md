@@ -1,4 +1,4 @@
-# Markdown to Qdrant ingestion and chat pipeline
+# KnowledgeHub
 
 This project recursively scans a folder of Markdown files, splits content by Markdown headings, creates embeddings with a local Ollama instance, and upserts the chunks into a shared Qdrant collection. It also includes a local chat flow that retrieves relevant chunks from Qdrant and sends them to an Ollama chat model so you can ask questions against your indexed docs.
 
