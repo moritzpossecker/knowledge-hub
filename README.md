@@ -2,7 +2,7 @@
 
 Diese Go-CLI setzt die gewünschten Kommandos um:
 
-- `init` — fragt `.env` interaktiv ab. Qdrant wird als `QDRANT_BASE_URL` gespeichert. Bei nicht erreichbaren lokalen Diensten kann es Docker Compose mit den in den Qdrant- und Ollama-URLs gewählten Host-Ports starten. Für entfernte Dienste wird nur auf den ausstehenden Start hingewiesen. Außerdem prüft es die gewählten Ollama-Modelle und kann fehlende Modelle installieren.
+- `init` — fragt `.env` interaktiv ab. Qdrant wird als `QDRANT_BASE_URL` plus `QDRANT_GRPC_PORT` gespeichert. Bei nicht erreichbaren lokalen Diensten kann es Docker Compose mit den gewählten HTTP-, gRPC- und Ollama-Host-Ports starten. Für entfernte Dienste wird nur auf den ausstehenden Start hingewiesen. Außerdem prüft es die gewählten Ollama-Modelle und kann fehlende Modelle installieren.
 - `ingest [path-or-git-url]` — portiert die Ingest-Logik aus `ingest.py` und führt danach automatisch einen Collection-Check aus.
 - `chat` — portiert die Logik aus `chat_with_docs.py` als interaktiven Terminal-Chat.
 

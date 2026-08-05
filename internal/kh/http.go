@@ -54,18 +54,19 @@ func ParseQdrantURL(raw string) (host, port string, useHTTPS bool, err error) {
 	return u.Hostname(), port, u.Scheme == "https", nil
 }
 
-// QdrantGRPCAddress derives Qdrant's gRPC port from its HTTP base URL. The
-// bundled Compose configuration exposes gRPC on the following host port.
-func QdrantGRPCAddress(baseURL string) (string, error) {
-	host, httpPort, _, err := ParseQdrantURL(baseURL)
+func QdrantGRPCAddress(baseURL, grpcPort string) (string, error) {
+	host, _, _, err := ParseQdrantURL(baseURL)
 	if err != nil {
 		return "", err
 	}
-	port, err := strconv.Atoi(httpPort)
+	port, err := strconv.Atoi(grpcPort)
 	if err != nil {
-		return "", fmt.Errorf("invalid Qdrant port %q: %w", httpPort, err)
+		return "", fmt.Errorf("invalid Qdrant gRPC port %q: %w", grpcPort, err)
 	}
-	return net.JoinHostPort(host, strconv.Itoa(port+1)), nil
+	if port < 1 || port > 65535 {
+		return "", fmt.Errorf("Qdrant gRPC port must be between 1 and 65535")
+	}
+	return net.JoinHostPort(host, strconv.Itoa(port)), nil
 }
 
 // URLPort returns the configured port or the supplied default when omitted.

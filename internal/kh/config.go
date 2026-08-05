@@ -16,6 +16,7 @@ type Config struct {
 	MarkdownRoot          string
 	CollectionName        string
 	QdrantBaseURL         string
+	QdrantGRPCPort        int
 	QdrantAPIKey          string
 	OllamaBaseURL         string
 	OllamaModel           string
@@ -48,6 +49,7 @@ func LoadConfig(path string) (Config, error) {
 		MarkdownRoot:          expandPath(v.GetString("MARKDOWN_ROOT")),
 		CollectionName:        v.GetString("COLLECTION_NAME"),
 		QdrantBaseURL:         strings.TrimRight(v.GetString("QDRANT_BASE_URL"), "/"),
+		QdrantGRPCPort:        v.GetInt("QDRANT_GRPC_PORT"),
 		QdrantAPIKey:          v.GetString("QDRANT_API_KEY"),
 		OllamaBaseURL:         strings.TrimRight(v.GetString("OLLAMA_BASE_URL"), "/"),
 		OllamaModel:           v.GetString("OLLAMA_MODEL"),
@@ -84,6 +86,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("MARKDOWN_ROOT", "./docs")
 	v.SetDefault("COLLECTION_NAME", "markdown_docs")
 	v.SetDefault("QDRANT_BASE_URL", "http://localhost:6333")
+	v.SetDefault("QDRANT_GRPC_PORT", 6334)
 	v.SetDefault("QDRANT_API_KEY", "")
 	v.SetDefault("OLLAMA_BASE_URL", "http://localhost:11434")
 	v.SetDefault("OLLAMA_MODEL", "embeddinggemma")

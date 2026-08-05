@@ -44,13 +44,13 @@ func TestIsLocalhost(t *testing.T) {
 	}
 }
 
-func TestQdrantGRPCAddressUsesFollowingPort(t *testing.T) {
-	address, err := QdrantGRPCAddress("http://localhost:7333")
+func TestQdrantGRPCAddressUsesConfiguredPort(t *testing.T) {
+	address, err := QdrantGRPCAddress("http://localhost:7333", "8123")
 	if err != nil {
 		t.Fatalf("QdrantGRPCAddress() error = %v", err)
 	}
-	if address != "localhost:7334" {
-		t.Fatalf("QdrantGRPCAddress() = %q, want localhost:7334", address)
+	if address != "localhost:8123" {
+		t.Fatalf("QdrantGRPCAddress() = %q, want localhost:8123", address)
 	}
 }
 

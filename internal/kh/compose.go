@@ -7,15 +7,24 @@ import (
 	"strconv"
 )
 
-func RunComposeUp(path, qdrantHTTPPort, ollamaPort string) error {
+func RunComposeUp(path, qdrantHTTPPort, qdrantGRPCPort, ollamaPort string) error {
 	cmd := exec.Command("docker", "compose", "-f", path, "up", "-d")
-	qdrantGRPCPort, err := strconv.Atoi(qdrantHTTPPort)
-	if err != nil {
-		return fmt.Errorf("invalid Qdrant HTTP port %q: %w", qdrantHTTPPort, err)
+	for _, port := range []struct {
+		name  string
+		value string
+	}{
+		{"Qdrant HTTP", qdrantHTTPPort},
+		{"Qdrant gRPC", qdrantGRPCPort},
+		{"Ollama", ollamaPort},
+	} {
+		value, err := strconv.Atoi(port.value)
+		if err != nil || value < 1 || value > 65535 {
+			return fmt.Errorf("invalid %s port %q", port.name, port.value)
+		}
 	}
 	cmd.Env = append(os.Environ(),
 		"QDRANT_HTTP_PORT="+qdrantHTTPPort,
-		"QDRANT_GRPC_PORT="+strconv.Itoa(qdrantGRPCPort+1),
+		"QDRANT_GRPC_PORT="+qdrantGRPCPort,
 		"OLLAMA_PORT="+ollamaPort,
 	)
 	cmd.Stdout = os.Stdout

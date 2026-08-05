@@ -23,6 +23,7 @@ var initCmd = &cobra.Command{
 			"MARKDOWN_ROOT":        cfg.MarkdownRoot,
 			"COLLECTION_NAME":      cfg.CollectionName,
 			"QDRANT_BASE_URL":      cfg.QdrantBaseURL,
+			"QDRANT_GRPC_PORT":     fmt.Sprintf("%d", cfg.QdrantGRPCPort),
 			"QDRANT_API_KEY":       cfg.QdrantAPIKey,
 			"OLLAMA_BASE_URL":      cfg.OllamaBaseURL,
 			"OLLAMA_MODEL":         cfg.OllamaModel,
@@ -41,6 +42,7 @@ var initCmd = &cobra.Command{
 
 		connectionQuestions := []struct{ key, label string }{
 			{"QDRANT_BASE_URL", "Qdrant base URL (where the Qdrant vector database server is reachable or should be created)"},
+			{"QDRANT_GRPC_PORT", "Qdrant gRPC port (used for ingest and chat; 6334 is the Docker default)"},
 			{"QDRANT_API_KEY", "Qdrant API key (optional, needed by protected instances)"},
 			{"OLLAMA_BASE_URL", "Ollama URL (where the Ollama server is reachable or should be created)"},
 		}
@@ -54,6 +56,9 @@ var initCmd = &cobra.Command{
 		}
 		_, qdrantPort, _, err := kh.ParseQdrantURL(values["QDRANT_BASE_URL"])
 		if err != nil {
+			return err
+		}
+		if _, err := kh.QdrantGRPCAddress(values["QDRANT_BASE_URL"], values["QDRANT_GRPC_PORT"]); err != nil {
 			return err
 		}
 
@@ -93,7 +98,7 @@ var initCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				if err := kh.RunComposeUp(composePath, qdrantPort, ollamaPort); err != nil {
+				if err := kh.RunComposeUp(composePath, qdrantPort, values["QDRANT_GRPC_PORT"], ollamaPort); err != nil {
 					return err
 				}
 			}

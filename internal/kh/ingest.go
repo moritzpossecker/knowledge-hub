@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -287,7 +288,7 @@ func inferVectorSize(cfg Config) (int, error) {
 }
 
 func newQdrantService(ctx context.Context, cfg Config) (*qdrantService, *grpc.ClientConn, error) {
-	addr, err := QdrantGRPCAddress(cfg.QdrantBaseURL)
+	addr, err := QdrantGRPCAddress(cfg.QdrantBaseURL, strconv.Itoa(cfg.QdrantGRPCPort))
 	if err != nil {
 		return nil, nil, err
 	}
