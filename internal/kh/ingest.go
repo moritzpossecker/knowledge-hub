@@ -53,6 +53,16 @@ type qdrantService struct {
 }
 
 func RunIngest(cfg Config) (IngestStats, error) {
+	return runIngest(cfg, nil)
+}
+
+// RunIngestWithProgress performs ingestion and writes file and upload progress
+// to out. Passing nil suppresses progress output.
+func RunIngestWithProgress(cfg Config, out io.Writer) (IngestStats, error) {
+	return runIngest(cfg, out)
+}
+
+func runIngest(cfg Config, out io.Writer) (IngestStats, error) {
 	root := cfg.MarkdownRoot
 	cleanup := func() {}
 	if isGitURL(root) {
@@ -71,6 +81,8 @@ func RunIngest(cfg Config) (IngestStats, error) {
 	if len(files) == 0 {
 		return IngestStats{}, fmt.Errorf("no markdown files found in %s", root)
 	}
+	progressf(out, "Found %d markdown files.\n", len(files))
+	progressf(out, "Connecting to Qdrant and preparing collection...\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
@@ -87,32 +99,51 @@ func RunIngest(cfg Config) (IngestStats, error) {
 	if err := ensureCollection(ctx, qs, cfg, uint64(vectorSize)); err != nil {
 		return IngestStats{}, err
 	}
+	progressf(out, "Collection ready. Starting upload.\n")
 
 	existing := map[string]struct{}{}
 	var totalChunks int
-	for _, file := range files {
+	for fileIndex, file := range files {
+		rel, err := filepath.Rel(root, file)
+		if err != nil {
+			return IngestStats{}, err
+		}
+		rel = filepath.ToSlash(rel)
+		progressf(out, "[%d/%d] Preparing %s...\n", fileIndex+1, len(files), rel)
 		chunks, err := buildChunks(root, file)
 		if err != nil {
 			return IngestStats{}, err
 		}
 		if len(chunks) == 0 {
+			progressf(out, "[%d/%d] Skipped %s (no indexable content).\n", fileIndex+1, len(files), rel)
 			continue
 		}
 		existing[chunks[0].DocumentID] = struct{}{}
 		if err := deleteDocumentPoints(ctx, qs, cfg.CollectionName, chunks[0].DocumentID); err != nil {
 			return IngestStats{}, err
 		}
-		if err := upsertChunks(ctx, qs, cfg, chunks); err != nil {
+		progressf(out, "[%d/%d] Uploading %s (%d chunks)...\n", fileIndex+1, len(files), rel, len(chunks))
+		if err := upsertChunks(ctx, qs, cfg, chunks, func(uploaded, total int) {
+			progressf(out, "[%d/%d] Uploaded %s: %d/%d chunks.\n", fileIndex+1, len(files), rel, uploaded, total)
+		}); err != nil {
 			return IngestStats{}, err
 		}
 		totalChunks += len(chunks)
+		progressf(out, "[%d/%d] Finished %s.\n", fileIndex+1, len(files), rel)
 	}
 	if cfg.DeleteMissingFiles {
+		progressf(out, "Removing vectors for missing source files...\n")
 		if err := deleteMissingDocuments(ctx, qs, cfg, existing); err != nil {
 			return IngestStats{}, err
 		}
 	}
 	return IngestStats{Files: len(files), Chunks: totalChunks}, nil
+}
+
+func progressf(out io.Writer, format string, args ...any) {
+	if out != nil {
+		_, _ = fmt.Fprintf(out, format, args...)
+	}
 }
 
 func iterMarkdownFiles(root string) ([]string, error) {
@@ -347,7 +378,7 @@ func deleteMissingDocuments(ctx context.Context, qs *qdrantService, cfg Config, 
 	return nil
 }
 
-func upsertChunks(ctx context.Context, qs *qdrantService, cfg Config, chunks []Chunk) error {
+func upsertChunks(ctx context.Context, qs *qdrantService, cfg Config, chunks []Chunk, onUploaded func(uploaded, total int)) error {
 	texts := make([]string, 0, len(chunks))
 	for _, c := range chunks {
 		texts = append(texts, c.Content)
@@ -389,6 +420,9 @@ func upsertChunks(ctx context.Context, qs *qdrantService, cfg Config, chunks []C
 		_, err := qs.points.Upsert(ctx, &qdrant.UpsertPoints{CollectionName: cfg.CollectionName, Wait: boolPtr(true), Points: points[i:end]})
 		if err != nil {
 			return err
+		}
+		if onUploaded != nil {
+			onUploaded(end, len(points))
 		}
 	}
 	return nil

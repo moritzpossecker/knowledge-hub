@@ -20,7 +20,7 @@ var ingestCmd = &cobra.Command{
 		if len(args) == 1 {
 			cfg.MarkdownRoot = args[0]
 		}
-		stats, err := kh.RunIngest(cfg)
+		stats, err := kh.RunIngestWithProgress(cfg, cmd.OutOrStdout())
 		if err != nil {
 			return err
 		}
