@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -21,16 +23,12 @@ func IsHTTPHealthy(url string) bool {
 	return resp.StatusCode >= 200 && resp.StatusCode < 500
 }
 
-func BuildQdrantURL(useHTTPS, host, port string) string {
-	scheme := "http"
-	if useHTTPS == "true" {
-		scheme = "https"
-	}
-	return fmt.Sprintf("%s://%s:%s/collections", scheme, host, port)
+func QdrantHealthURL(baseURL string) string {
+	return strings.TrimRight(baseURL, "/") + "/collections"
 }
 
-// ParseQdrantURL converts the single URL requested during setup into the
-// existing QDRANT_HOST, QDRANT_PORT, and QDRANT_USE_HTTPS settings.
+// ParseQdrantURL validates QDRANT_BASE_URL and exposes its connection parts
+// where they are needed for health checks and Docker port mappings.
 func ParseQdrantURL(raw string) (host, port string, useHTTPS bool, err error) {
 	u, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {
@@ -54,6 +52,32 @@ func ParseQdrantURL(raw string) (host, port string, useHTTPS bool, err error) {
 		}
 	}
 	return u.Hostname(), port, u.Scheme == "https", nil
+}
+
+// QdrantGRPCAddress derives Qdrant's gRPC port from its HTTP base URL. The
+// bundled Compose configuration exposes gRPC on the following host port.
+func QdrantGRPCAddress(baseURL string) (string, error) {
+	host, httpPort, _, err := ParseQdrantURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+	port, err := strconv.Atoi(httpPort)
+	if err != nil {
+		return "", fmt.Errorf("invalid Qdrant port %q: %w", httpPort, err)
+	}
+	return net.JoinHostPort(host, strconv.Itoa(port+1)), nil
+}
+
+// URLPort returns the configured port or the supplied default when omitted.
+func URLPort(rawURL, defaultPort string) (string, error) {
+	u, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+		return "", fmt.Errorf("invalid URL %q", rawURL)
+	}
+	if port := u.Port(); port != "" {
+		return port, nil
+	}
+	return defaultPort, nil
 }
 
 func IsLocalhost(rawURL string) bool {

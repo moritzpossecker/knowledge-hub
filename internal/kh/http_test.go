@@ -44,6 +44,16 @@ func TestIsLocalhost(t *testing.T) {
 	}
 }
 
+func TestQdrantGRPCAddressUsesFollowingPort(t *testing.T) {
+	address, err := QdrantGRPCAddress("http://localhost:7333")
+	if err != nil {
+		t.Fatalf("QdrantGRPCAddress() error = %v", err)
+	}
+	if address != "localhost:7334" {
+		t.Fatalf("QdrantGRPCAddress() = %q, want localhost:7334", address)
+	}
+}
+
 func TestOllamaMissingModelsRecognizesImplicitLatestTag(t *testing.T) {
 	missing := missingOllamaModels(
 		[]string{"embeddinggemma:latest", "llama3.1:8b"},

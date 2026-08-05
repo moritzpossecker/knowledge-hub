@@ -287,7 +287,10 @@ func inferVectorSize(cfg Config) (int, error) {
 }
 
 func newQdrantService(ctx context.Context, cfg Config) (*qdrantService, *grpc.ClientConn, error) {
-	addr := fmt.Sprintf("%s:%d", cfg.QdrantHost, 6334)
+	addr, err := QdrantGRPCAddress(cfg.QdrantBaseURL)
+	if err != nil {
+		return nil, nil, err
+	}
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, nil, err
@@ -363,17 +366,17 @@ func upsertChunks(ctx context.Context, qs *qdrantService, cfg Config, chunks []C
 	points := make([]*qdrant.PointStruct, 0, len(chunks))
 	for i, c := range chunks {
 		payload := map[string]*qdrant.Value{
-			"document_id": valueString(c.DocumentID),
-			"source_path": valueString(c.SourcePath),
-			"file_name": valueString(c.FileName),
-			"title": valueString(c.Title),
-			"headings": valueStrings(c.Headings),
+			"document_id":  valueString(c.DocumentID),
+			"source_path":  valueString(c.SourcePath),
+			"file_name":    valueString(c.FileName),
+			"title":        valueString(c.Title),
+			"headings":     valueStrings(c.Headings),
 			"heading_path": valueString(c.HeadingPath),
-			"chunk_index": valueInt(int64(c.ChunkIndex)),
-			"content": valueString(c.Content),
+			"chunk_index":  valueInt(int64(c.ChunkIndex)),
+			"content":      valueString(c.Content),
 			"content_hash": valueString(c.ContentHash),
-			"file_hash": valueString(c.FileHash),
-			"modified_at": valueString(c.ModifiedAt),
+			"file_hash":    valueString(c.FileHash),
+			"modified_at":  valueString(c.ModifiedAt),
 		}
 		points = append(points, &qdrant.PointStruct{Id: &qdrant.PointId{PointIdOptions: &qdrant.PointId_Uuid{Uuid: c.PointID}}, Vectors: qdrant.NewVectors(vectors[i]...), Payload: payload})
 	}

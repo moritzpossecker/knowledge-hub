@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -23,10 +22,8 @@ var initCmd = &cobra.Command{
 		values := map[string]string{
 			"MARKDOWN_ROOT":        cfg.MarkdownRoot,
 			"COLLECTION_NAME":      cfg.CollectionName,
-			"QDRANT_HOST":          cfg.QdrantHost,
-			"QDRANT_PORT":          fmt.Sprintf("%d", cfg.QdrantPort),
+			"QDRANT_BASE_URL":      cfg.QdrantBaseURL,
 			"QDRANT_API_KEY":       cfg.QdrantAPIKey,
-			"QDRANT_USE_HTTPS":     fmt.Sprintf("%t", cfg.QdrantUseHTTPS),
 			"OLLAMA_BASE_URL":      cfg.OllamaBaseURL,
 			"OLLAMA_MODEL":         cfg.OllamaModel,
 			"OLLAMA_EMBED_MODEL":   cfg.OllamaEmbedModel,
@@ -42,14 +39,11 @@ var initCmd = &cobra.Command{
 			"CHAT_SYSTEM_PROMPT":   cfg.ChatSystemPrompt,
 		}
 
-		qdrantURL := kh.BuildQdrantURL(values["QDRANT_USE_HTTPS"], values["QDRANT_HOST"], values["QDRANT_PORT"])
-		qdrantURL = strings.TrimSuffix(qdrantURL, "/collections")
 		connectionQuestions := []struct{ key, label string }{
-			{"QDRANT_URL", "Qdrant URL (for example http://localhost:6333)"},
-			{"QDRANT_API_KEY", "Qdrant API key (optional; needed by protected instances)"},
-			{"OLLAMA_BASE_URL", "Ollama URL (for example http://localhost:11434)"},
+			{"QDRANT_BASE_URL", "Qdrant base URL (where the Qdrant vector database server is reachable or should be created)"},
+			{"QDRANT_API_KEY", "Qdrant API key (optional, needed by protected instances)"},
+			{"OLLAMA_BASE_URL", "Ollama URL (where the Ollama server is reachable or should be created)"},
 		}
-		values["QDRANT_URL"] = qdrantURL
 		for _, q := range connectionQuestions {
 			prompt := promptui.Prompt{Label: q.label, Default: values[q.key], AllowEdit: true}
 			res, err := prompt.Run()
@@ -58,30 +52,27 @@ var initCmd = &cobra.Command{
 			}
 			values[q.key] = strings.TrimSpace(res)
 		}
-		host, port, useHTTPS, err := kh.ParseQdrantURL(values["QDRANT_URL"])
+		_, qdrantPort, _, err := kh.ParseQdrantURL(values["QDRANT_BASE_URL"])
 		if err != nil {
 			return err
 		}
-		values["QDRANT_HOST"] = host
-		values["QDRANT_PORT"] = port
-		values["QDRANT_USE_HTTPS"] = strconv.FormatBool(useHTTPS)
 
-		qdrantHealthURL := kh.BuildQdrantURL(values["QDRANT_USE_HTTPS"], values["QDRANT_HOST"], values["QDRANT_PORT"])
+		qdrantHealthURL := kh.QdrantHealthURL(values["QDRANT_BASE_URL"])
 		ollamaHealthURL := strings.TrimRight(values["OLLAMA_BASE_URL"], "/") + "/api/tags"
 		qdrantUp := kh.IsHTTPHealthy(qdrantHealthURL)
 		ollamaUp := kh.IsHTTPHealthy(ollamaHealthURL)
 		localUnavailable := false
 		if !qdrantUp {
-			if kh.IsLocalhost(values["QDRANT_URL"]) {
-				fmt.Fprintf(cmd.OutOrStdout(), "Qdrant is not reachable at %s. The local container should listen on port %s.\n", values["QDRANT_URL"], values["QDRANT_PORT"])
+			if kh.IsLocalhost(values["QDRANT_BASE_URL"]) {
+				fmt.Fprintf(cmd.OutOrStdout(), "Qdrant is not reachable at %s.\n", values["QDRANT_BASE_URL"])
 				localUnavailable = true
 			} else {
-				fmt.Fprintf(cmd.OutOrStdout(), "Qdrant is not reachable at %s yet. Start that remote instance, then continue.\n", values["QDRANT_URL"])
+				fmt.Fprintf(cmd.OutOrStdout(), "Qdrant is not reachable at %s yet. Start that remote instance, then continue.\n", values["QDRANT_BASE_URL"])
 			}
 		}
 		if !ollamaUp {
 			if kh.IsLocalhost(values["OLLAMA_BASE_URL"]) {
-				fmt.Fprintf(cmd.OutOrStdout(), "Ollama is not reachable at %s. The local container should listen on port 11434.\n", values["OLLAMA_BASE_URL"])
+				fmt.Fprintf(cmd.OutOrStdout(), "Ollama is not reachable at %s.\n", values["OLLAMA_BASE_URL"])
 				localUnavailable = true
 			} else {
 				fmt.Fprintf(cmd.OutOrStdout(), "Ollama is not reachable at %s yet. Start that remote instance, then continue.\n", values["OLLAMA_BASE_URL"])
@@ -98,7 +89,11 @@ var initCmd = &cobra.Command{
 				if _, err := os.Stat(composePath); err != nil {
 					return fmt.Errorf("docker-compose.yml not found: %w", err)
 				}
-				if err := kh.RunComposeUp(composePath); err != nil {
+				ollamaPort, err := kh.URLPort(values["OLLAMA_BASE_URL"], "11434")
+				if err != nil {
+					return err
+				}
+				if err := kh.RunComposeUp(composePath, qdrantPort, ollamaPort); err != nil {
 					return err
 				}
 			}
@@ -130,9 +125,6 @@ var initCmd = &cobra.Command{
 			values[q.key] = strings.TrimSpace(res)
 		}
 
-		// QDRANT_URL is an interactive convenience; retain the established
-		// decomposed settings in .env for the rest of the application.
-		delete(values, "QDRANT_URL")
 		if err := kh.WriteEnvFile(".env", values); err != nil {
 			return err
 		}
