@@ -46,6 +46,7 @@ var initCmd = &cobra.Command{
 			{"QDRANT_API_KEY", "Qdrant API key (optional, needed by protected instances)"},
 			{"OLLAMA_BASE_URL", "Ollama URL (where the Ollama server is reachable or should be created)"},
 		}
+		uiNote(cmd.OutOrStdout(), "Connection setup — press Enter to keep a suggested value.")
 		for _, q := range connectionQuestions {
 			prompt := promptui.Prompt{Label: q.label, Default: values[q.key], AllowEdit: true}
 			res, err := prompt.Run()
@@ -120,6 +121,7 @@ var initCmd = &cobra.Command{
 			{"CHAT_SCORE_THRESHOLD", "Chat score threshold (optional; omit to accept every retrieved chunk, or set a minimum similarity score)"},
 			{"CHAT_SYSTEM_PROMPT", "Chat system prompt (instructions that constrain how answers use the retrieved context)"},
 		}
+		uiNote(cmd.OutOrStdout(), "Index and chat settings")
 
 		for _, q := range questions {
 			prompt := promptui.Prompt{Label: q.label, Default: values[q.key], AllowEdit: true}
@@ -133,7 +135,7 @@ var initCmd = &cobra.Command{
 		if err := kh.WriteEnvFile(".env", values); err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "✅ .env geschrieben")
+		uiSuccess(cmd.OutOrStdout(), "Saved configuration to .env")
 
 		missing, err := kh.OllamaMissingModels(values["OLLAMA_BASE_URL"], []string{values["OLLAMA_MODEL"], values["OLLAMA_EMBED_MODEL"], values["OLLAMA_CHAT_MODEL"]})
 		if err != nil {
@@ -141,7 +143,7 @@ var initCmd = &cobra.Command{
 			return nil
 		}
 		if len(missing) == 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "All selected Ollama models are installed.")
+			uiSuccess(cmd.OutOrStdout(), "All selected Ollama models are installed.")
 			return nil
 		}
 		confirm := promptui.Select{Label: fmt.Sprintf("Missing Ollama models: %s. Install them automatically?", strings.Join(missing, ", ")), Items: []string{"Yes", "No"}}
@@ -156,7 +158,7 @@ var initCmd = &cobra.Command{
 					return err
 				}
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Selected Ollama models installed.")
+			uiSuccess(cmd.OutOrStdout(), "Selected Ollama models installed.")
 		}
 		return nil
 	},

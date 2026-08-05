@@ -24,7 +24,7 @@ var ingestCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "✅ Ingest abgeschlossen: %d Dateien, %d Chunks\n", stats.Files, stats.Chunks)
+		uiSuccess(cmd.OutOrStdout(), fmt.Sprintf("Indexed %d files and %d chunks.", stats.Files, stats.Chunks))
 		return kh.RunCollectionCheck(cfg, true, 1, cmd.OutOrStdout())
 	},
 }

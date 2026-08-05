@@ -81,8 +81,8 @@ func runIngest(cfg Config, out io.Writer) (IngestStats, error) {
 	if len(files) == 0 {
 		return IngestStats{}, fmt.Errorf("no markdown files found in %s", root)
 	}
-	progressf(out, "Found %d markdown files.\n", len(files))
-	progressf(out, "Connecting to Qdrant and preparing collection...\n")
+	progressf(out, "› Found %d Markdown files\n", len(files))
+	progressf(out, "› Connecting to Qdrant and preparing the collection\n")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
@@ -99,7 +99,7 @@ func runIngest(cfg Config, out io.Writer) (IngestStats, error) {
 	if err := ensureCollection(ctx, qs, cfg, uint64(vectorSize)); err != nil {
 		return IngestStats{}, err
 	}
-	progressf(out, "Collection ready. Starting upload.\n")
+	progressf(out, "✓ Collection ready — starting upload\n\n")
 
 	existing := map[string]struct{}{}
 	var totalChunks int
@@ -109,30 +109,30 @@ func runIngest(cfg Config, out io.Writer) (IngestStats, error) {
 			return IngestStats{}, err
 		}
 		rel = filepath.ToSlash(rel)
-		progressf(out, "[%d/%d] Preparing %s...\n", fileIndex+1, len(files), rel)
+		progressf(out, "[%d/%d]  %s\n", fileIndex+1, len(files), rel)
 		chunks, err := buildChunks(root, file)
 		if err != nil {
 			return IngestStats{}, err
 		}
 		if len(chunks) == 0 {
-			progressf(out, "[%d/%d] Skipped %s (no indexable content).\n", fileIndex+1, len(files), rel)
+			progressf(out, "         ↳ skipped (no indexable content)\n")
 			continue
 		}
 		existing[chunks[0].DocumentID] = struct{}{}
 		if err := deleteDocumentPoints(ctx, qs, cfg.CollectionName, chunks[0].DocumentID); err != nil {
 			return IngestStats{}, err
 		}
-		progressf(out, "[%d/%d] Uploading %s (%d chunks)...\n", fileIndex+1, len(files), rel, len(chunks))
+		progressf(out, "         ↳ embedding and uploading %d chunks\n", len(chunks))
 		if err := upsertChunks(ctx, qs, cfg, chunks, func(uploaded, total int) {
-			progressf(out, "[%d/%d] Uploaded %s: %d/%d chunks.\n", fileIndex+1, len(files), rel, uploaded, total)
+			progressf(out, "         ↳ uploaded %d/%d chunks\n", uploaded, total)
 		}); err != nil {
 			return IngestStats{}, err
 		}
 		totalChunks += len(chunks)
-		progressf(out, "[%d/%d] Finished %s.\n", fileIndex+1, len(files), rel)
+		progressf(out, "         ✓ complete\n")
 	}
 	if cfg.DeleteMissingFiles {
-		progressf(out, "Removing vectors for missing source files...\n")
+		progressf(out, "\n› Removing vectors for missing source files\n")
 		if err := deleteMissingDocuments(ctx, qs, cfg, existing); err != nil {
 			return IngestStats{}, err
 		}

@@ -23,9 +23,10 @@ func RunCollectionCheck(cfg Config, extended bool, limit uint64, out io.Writer) 
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "Collection: %s\n", cfg.CollectionName)
-	fmt.Fprintf(out, "Status: %s\n", info.Result.Status.String())
-	fmt.Fprintf(out, "Points: %d\n", info.Result.PointsCount)
+	fmt.Fprintf(out, "\nCollection summary\n")
+	fmt.Fprintf(out, "  Name    %s\n", cfg.CollectionName)
+	fmt.Fprintf(out, "  Status  %s\n", info.Result.Status.String())
+	fmt.Fprintf(out, "  Points  %d\n", info.Result.PointsCount)
 	if !extended {
 		return nil
 	}
@@ -35,7 +36,7 @@ func RunCollectionCheck(cfg Config, extended bool, limit uint64, out io.Writer) 
 		return err
 	}
 	for i, p := range resp.Result {
-		fmt.Fprintf(out, "\nPoint %d\n", i+1)
+		fmt.Fprintf(out, "\nSample point %d\n", i+1)
 		fmt.Fprintf(out, "  id: %s\n", p.Id.GetUuid())
 		fmt.Fprintf(out, "  source_path: %s\n", payloadString(p.Payload, "source_path"))
 		fmt.Fprintf(out, "  heading_path: %s\n", payloadString(p.Payload, "heading_path"))

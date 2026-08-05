@@ -43,9 +43,11 @@ func RunChat(cfg Config, in io.Reader, out io.Writer) error {
 	defer conn.Close()
 
 	scanner := bufio.NewScanner(in)
-	fmt.Fprintln(out, "Chat gestartet. Beenden mit 'exit' oder 'quit'.")
+	fmt.Fprintf(out, "Chat with %s  ·  collection %s\n", cfg.OllamaChatModel, cfg.CollectionName)
+	fmt.Fprintln(out, "Ask about your indexed documentation. Type /exit to leave.")
+	fmt.Fprintln(out)
 	for {
-		fmt.Fprint(out, "> ")
+		fmt.Fprint(out, "you › ")
 		if !scanner.Scan() {
 			return scanner.Err()
 		}
@@ -54,19 +56,20 @@ func RunChat(cfg Config, in io.Reader, out io.Writer) error {
 			continue
 		}
 		lower := strings.ToLower(question)
-		if lower == "exit" || lower == "quit" {
-			fmt.Fprintln(out, "Bye.")
+		if lower == "exit" || lower == "quit" || lower == "/exit" || lower == "/quit" {
+			fmt.Fprintln(out, "\nSession closed.")
 			return nil
 		}
+		fmt.Fprint(out, "\nassistant · thinking…\n")
 		answer, sources, err := askQuestion(ctx, qs, cfg, question)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "\n%s\n\n", answer)
+		fmt.Fprintf(out, "\nassistant\n%s\n", answer)
 		if len(sources) > 0 {
-			fmt.Fprintln(out, "Quellen:")
+			fmt.Fprintln(out, "\nSources")
 			for _, s := range sources {
-				fmt.Fprintf(out, "- %s\n", s)
+				fmt.Fprintf(out, "  • %s\n", s)
 			}
 			fmt.Fprintln(out)
 		}
