@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { runSync, runCollectionCheck } from "./sync.js";
+import { runSync, runCollectionCheck } from "./sync/sync.js";
 import { error, header, success } from "./ui.js";
 import { runUpdateConfig } from "./config/updateConfig.js";
 import { loadConfig } from "./config/config.js";
@@ -44,7 +44,7 @@ program
     if (pathOrGitUrl) {
       config.sync.markdownRootPath = pathOrGitUrl;
     }
-    const stats = await runSync(config, process.stdout);
+    const stats = await runSync(config, process.stdout, process.stdin);
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
     await runCollectionCheck(config, true, 1, process.stdout);
   });

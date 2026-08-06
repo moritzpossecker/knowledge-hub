@@ -1,13 +1,12 @@
 import readline from "node:readline/promises";
 import { error, confirm } from "../ui.js";
-import { rawListeners } from "process";
 import { runComposeUp } from "../compose.js";
 import { access } from "node:fs/promises";
 
 export async function checkServersRunning(
   qdrantBaseUrl: string,
-  ollamaBaseUrl: string,
   qdrantGrpcPort: number,
+  ollamaBaseUrl: string,
   managedViaDocker: boolean,
   input: NodeJS.ReadableStream,
   output: NodeJS.WritableStream
@@ -51,6 +50,8 @@ export async function checkServersRunning(
   const composePath = "docker-compose.yml";
   await access(composePath);
   await runComposeUp(composePath, qdrantBaseUrl, qdrantGrpcPort, ollamaBaseUrl);
+
+  await checkServersRunning(qdrantBaseUrl, qdrantGrpcPort, ollamaBaseUrl, managedViaDocker, input, output);
 }
 
 async function isHttpHealthy(url: string): Promise<boolean> {

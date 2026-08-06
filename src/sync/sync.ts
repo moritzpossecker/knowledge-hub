@@ -1,8 +1,10 @@
-import type { Config } from "./config/config.js";
-import { isGitUrl, cloneRepo } from "./git.js";
-import { buildChunks, iterMarkdownFiles, type Chunk } from "./markdown.js";
-import { ollamaEmbed } from "./ollama.js";
-import { QdrantClient, type QdrantPoint, payloadString } from "./qdrant.js";
+import { checkModelsInstalled } from "../checks/modelsInstalledCheck.js";
+import { checkServersRunning } from "../checks/serversRunningCheck.js";
+import type { Config } from "../config/config.js";
+import { isGitUrl, cloneRepo } from "../git.js";
+import { buildChunks, iterMarkdownFiles, type Chunk } from "../markdown.js";
+import { ollamaEmbed } from "../ollama.js";
+import { QdrantClient, type QdrantPoint, payloadString } from "../qdrant.js";
 
 export interface SyncStats {
   files: number;
@@ -15,7 +17,8 @@ function progress(out: NodeJS.WritableStream | undefined, message: string): void
 
 export async function runSync(
   config: Config,
-  output: NodeJS.WritableStream
+  output: NodeJS.WritableStream,
+  input: NodeJS.ReadableStream
 ): Promise<SyncStats> {
   let root = config.sync.markdownRootPath;
   let cleanup: (() => Promise<void>) | undefined;
@@ -32,6 +35,23 @@ export async function runSync(
     }
 
     progress(output, `› Found ${files.length} Markdown files\n`);
+
+    await checkServersRunning(
+      config.setup.qdrant.baseUrl,
+      config.setup.qdrant.grpcPort,
+      config.setup.ollama.baseUrl,
+      config.setup.managedViaDocker,
+      input,
+      output
+    )
+
+    await checkModelsInstalled(
+      config.setup.ollama.baseUrl,
+      [config.sync.embedModel],
+      input,
+      output
+    );
+
     progress(output, "› Connecting to Qdrant and preparing the collection\n");
 
     const qdrant = new QdrantClient(config);
