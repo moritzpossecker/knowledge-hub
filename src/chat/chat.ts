@@ -2,12 +2,30 @@ import readline from "node:readline/promises";
 import { Config } from "../config/config.js";
 import { payloadString, QdrantClient } from "../qdrant.js";
 import { ollamaChat, ollamaEmbed } from "../ollama.js";
+import { checkModelsInstalled } from "../checks/modelsInstalledCheck.js";
+import { checkServersRunning } from "../checks/serversRunningCheck.js";
 
 export async function runChat(
   config: Config,
   input: NodeJS.ReadableStream,
   output: NodeJS.WritableStream
 ): Promise<void> {
+  await checkServersRunning(
+    config.setup.qdrant.baseUrl,
+    config.setup.qdrant.grpcPort,
+    config.setup.ollama.baseUrl,
+    config.setup.managedViaDocker,
+    input,
+    output
+  );
+
+  await checkModelsInstalled(
+    config.setup.ollama.baseUrl,
+    [config.chat.retrievalModel, config.chat.chatModel],
+    input,
+    output
+  );
+
   const qdrant = new QdrantClient(config);
   const rl = readline.createInterface({ input, output });
 

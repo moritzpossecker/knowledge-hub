@@ -1,8 +1,8 @@
 import { checkModelsInstalled } from "../checks/modelsInstalledCheck.js";
 import { checkServersRunning } from "../checks/serversRunningCheck.js";
 import type { Config } from "../config/config.js";
-import { isGitUrl, cloneRepo } from "../git.js";
-import { buildChunks, iterMarkdownFiles, type Chunk } from "../markdown.js";
+import { isGitUrl, cloneRepo } from "./git.js";
+import { buildChunks, iterMarkdownFiles, type Chunk } from "./markdown.js";
 import { ollamaEmbed } from "../ollama.js";
 import { QdrantClient, type QdrantPoint, payloadString } from "../qdrant.js";
 
