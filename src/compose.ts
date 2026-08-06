@@ -2,20 +2,12 @@ import { spawn } from "node:child_process";
 
 export async function runComposeUp(
   composePath: string,
-  qdrantHttpPort: string,
-  qdrantGrpcPort: string,
-  ollamaPort: string
+  qdrantBaseUrl: string,
+  qdrantGrpcPort: number,
+  ollamaBaseUrl: string
 ): Promise<void> {
-  for (const [name, value] of [
-    ["Qdrant HTTP", qdrantHttpPort],
-    ["Qdrant gRPC", qdrantGrpcPort],
-    ["Ollama", ollamaPort]
-  ] as const) {
-    const port = Number.parseInt(value, 10);
-    if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw new Error(`invalid ${name} port ${JSON.stringify(value)}`);
-    }
-  }
+  const qdrantHttpPort = new URL(qdrantBaseUrl).port;
+  const ollamaPort = new URL(ollamaBaseUrl).port;
 
   await new Promise<void>((resolve, reject) => {
     const child = spawn("docker", ["compose", "-f", composePath, "up", "-d"], {
@@ -23,7 +15,7 @@ export async function runComposeUp(
       env: {
         ...process.env,
         QDRANT_HTTP_PORT: qdrantHttpPort,
-        QDRANT_GRPC_PORT: qdrantGrpcPort,
+        QDRANT_GRPC_PORT: qdrantGrpcPort.toString(10),
         OLLAMA_PORT: ollamaPort
       }
     });

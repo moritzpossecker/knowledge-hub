@@ -1,7 +1,7 @@
 import readline from "node:readline/promises";
-import type { Config } from "./config.js";
-import { ollamaChat, ollamaEmbed } from "./ollama.js";
-import { payloadString, QdrantClient } from "./qdrant.js";
+import { Config } from "../config/config.js";
+import { payloadString, QdrantClient } from "../qdrant.js";
+import { ollamaChat, ollamaEmbed } from "../ollama.js";
 
 export async function runChat(
   config: Config,
@@ -11,8 +11,8 @@ export async function runChat(
   const qdrant = new QdrantClient(config);
   const rl = readline.createInterface({ input, output });
 
-  output.write(`Chat with ${config.ollamaChatModel}  ·  collection ${config.collectionName}\n`);
-  output.write("Ask about your indexed documentation. Type /exit to leave.\n\n");
+  output.write(`Chat with ${config?.chat.chatModel}  ·  collection ${config?.sync.collectionName}\n`);
+  output.write("Ask about your indexed documentation. Type /exit or /quit to leave.\n\n");
 
   try {
     while (true) {
@@ -48,12 +48,12 @@ async function askQuestion(
   config: Config,
   question: string
 ): Promise<{ answer: string; sources: string[] }> {
-  const embeddings = await ollamaEmbed(config.ollamaBaseUrl, config.ollamaEmbedModel, [question]);
+  const embeddings = await ollamaEmbed(config.setup.ollama.baseUrl, config.chat.retrievalModel, [question]);
   const payloads = await qdrant.search(
-    config.collectionName,
+    config.sync.collectionName,
     embeddings[0],
-    config.chatTopK,
-    config.chatScoreThreshold
+    config.chat.topK,
+    config.chat.scoreThreshold
   );
 
   if (!payloads.length) {
@@ -78,7 +78,7 @@ ${contextParts.join("\n\n---\n\n")}
 Question: ${question}`;
 
   return {
-    answer: await ollamaChat(config.ollamaBaseUrl, config.ollamaChatModel, config.chatSystemPrompt, prompt),
+    answer: await ollamaChat(config.setup.ollama.baseUrl, config.chat.chatModel, config.chat.systemPrompt, prompt),
     sources: [...sourceSet].sort()
   };
 }

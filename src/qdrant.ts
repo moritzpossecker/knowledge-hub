@@ -1,4 +1,4 @@
-import type { Config } from "./config.js";
+import type { Config } from "./config/config.js";
 
 export interface QdrantPoint {
   id: string;
@@ -30,11 +30,11 @@ interface CollectionInfoResponse {
 
 export class QdrantClient {
   private readonly baseUrl: string;
-  private readonly apiKey: string;
+  private readonly apiKey: string | undefined;
 
   constructor(config: Config) {
-    this.baseUrl = config.qdrantBaseUrl.replace(/\/+$/, "");
-    this.apiKey = config.qdrantApiKey;
+    this.baseUrl = config.setup.qdrant.baseUrl;
+    this.apiKey = config.setup.qdrant.apiKey;
   }
 
   async collectionInfo(collectionName: string): Promise<{ status: string; pointsCount: number }> {
