@@ -103,7 +103,7 @@ export async function runSync(
 
     if (prune) {
       progress(output, "\n› Prune: Removing vectors for missing source files\n");
-      await deleteMissingDocuments(qdrant, config, existing);
+      await deleteMissingDocuments(qdrant, config, existing, output);
     }
 
     return { files: files.length, chunks: totalChunks };
@@ -183,22 +183,40 @@ async function upsertChunks(
   }
 }
 
-async function deleteMissingDocuments(qdrant: QdrantClient, config: Config, existing: Set<string>): Promise<void> {
+async function deleteMissingDocuments(
+  qdrant: QdrantClient,
+  config: Config,
+  existing: Set<string>,
+  output: NodeJS.WritableStream
+): Promise<void> {
   let offset: unknown;
-  const stale = new Set<string>();
+  const stale = new Map<string, string>();
+
 
   do {
     const page = await qdrant.scrollPayloads(config.sync.collectionName, 256, offset);
     for (const payload of page.payloads) {
       const documentId = payloadString(payload, "document_id");
-      if (documentId && !existing.has(documentId)) {
-        stale.add(documentId);
+
+
+      if (documentId && !existing.has(documentId) && !stale.has(documentId)) {
+        const sourcePath = payloadString(payload, "source_path");
+        const fileName = payloadString(payload, "file_name");
+        stale.set(documentId, sourcePath ?? fileName ?? documentId);
       }
     }
     offset = page.nextOffset;
   } while (offset !== undefined && offset !== null);
 
-  for (const documentId of stale) {
-    await qdrant.deleteDocumentPoints(config.sync.collectionName, documentId);
+  if (stale.size === 0) {
+    progress(output, "\t↳ no files for deletion found\n");
+    return;
   }
+
+  for (const [documentId, sourcePath] of stale) {
+    await qdrant.deleteDocumentPoints(config.sync.collectionName, documentId);
+    progress(output, `\t↳ deleted ${sourcePath}\n`);
+  }
+
+  progress(output, `\t↳ deleted ${stale.size} file(s)\n`);
 }
