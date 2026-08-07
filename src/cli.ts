@@ -50,6 +50,25 @@ program
   });
 
 program
+  .command("init")
+  .description("Initialize the knowledge hub - runs config and sync")
+  .action(async () => {
+    await runUpdateConfig(
+      false,
+      true,
+      true,
+      true,
+      process.stdin,
+      process.stdout
+    );
+
+    const config = await loadConfig(process.stdout);
+    const stats = await runSync(config, process.stdout, process.stdin);
+    success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
+    await runCollectionCheck(config, true, 1, process.stdout); 
+  });
+
+program
   .command("chat")
   .description("Chat with indexed markdown docs")
   .action(async () => {
