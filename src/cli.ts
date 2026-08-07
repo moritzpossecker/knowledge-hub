@@ -42,7 +42,7 @@ program
   .option("-p, --prune", "Prune deleted files from the index")
   .option("-r, --recreate", "Recreate the index, removing all existing data and re-indexing all files")
   .description("Syncs markdown docs and runs collection-check afterwards")
-  .action(async (options, pathOrGitUrl?: string) => {
+  .action(async (pathOrGitUrl: string | undefined, options) => {
     const config = await loadConfig(process.stdout);
     if (pathOrGitUrl) {
       config.sync.markdownRootPath = pathOrGitUrl;
