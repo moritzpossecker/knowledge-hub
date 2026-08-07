@@ -5,6 +5,7 @@ import { isGitUrl, cloneRepo } from "./git.js";
 import { buildChunks, iterMarkdownFiles, type Chunk } from "./markdown.js";
 import { ollamaEmbed } from "../ollama.js";
 import { QdrantClient, type QdrantPoint, payloadString } from "../qdrant.js";
+import { relative } from "node:path";
 
 export interface SyncStats {
   files: number;
@@ -71,7 +72,7 @@ export async function runSync(
 
     for (let fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
       const file = files[fileIndex];
-      const rel = file.slice(root.length).replace(/^[/\\]/, "").split("\\").join("/");
+      const rel = relative(root, file).split("\\").join("/");
       progress(output, `[${fileIndex + 1}/${files.length}]  ${rel}\n`);
 
       const chunks = await buildChunks(root, file);
