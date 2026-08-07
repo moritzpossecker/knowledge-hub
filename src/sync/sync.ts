@@ -96,34 +96,6 @@ export async function runSync(
   }
 }
 
-export async function runCollectionCheck(
-  config: Config,
-  extended: boolean,
-  limit: number,
-  out: NodeJS.WritableStream
-): Promise<void> {
-  const qdrant = new QdrantClient(config);
-  const info = await qdrant.collectionInfo(config.sync.collectionName);
-  out.write("\nCollection summary\n");
-  out.write(`  Name    ${config.sync.collectionName}\n`);
-  out.write(`  Status  ${info.status}\n`);
-  out.write(`  Points  ${info.pointsCount}\n`);
-
-  if (!extended) {
-    return;
-  }
-
-  const sample = await qdrant.scrollPayloads(config.sync.collectionName, limit);
-  sample.payloads.forEach((payload, index) => {
-    out.write(`\nSample point ${index + 1}\n`);
-    out.write(`  source_path: ${payloadString(payload, "source_path")}\n`);
-    out.write(`  heading_path: ${payloadString(payload, "heading_path")}\n`);
-    const content = payloadString(payload, "content");
-    const preview = content.length > 240 ? `${content.slice(0, 240)}...` : content;
-    out.write(`  content: ${preview.replaceAll("\n", " ")}\n`);
-  });
-}
-
 async function inferVectorSize(config: Config): Promise<number> {
   const embeddings = await ollamaEmbed(config.setup.ollama.baseUrl, config.sync.embedModel, ["vector size probe"]);
   return embeddings[0].length;

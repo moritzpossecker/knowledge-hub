@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { runSync, runCollectionCheck } from "./sync/sync.js";
+import { runSync } from "./sync/sync.js";
 import { error, header, success } from "./ui.js";
 import { runUpdateConfig } from "./config/updateConfig.js";
 import { loadConfig } from "./config/config.js";
 import { runChat } from "./chat/chat.js";
+import { runCollectionCheck } from "./checks/collectionCheck.js";
 
 const program = new Command();
 
@@ -19,7 +20,7 @@ program
 
 program
   .command("config")
-  .description("Interactively create or update config.json")
+  .description("Create or update config.json")
   .option("-m, --manual", "Edit config.json manually instead of interactively")
   .option("--setup", "Only configure the setup and connection settings")
   .option("--sync", "Only configure the sync and performance settings")
@@ -46,7 +47,7 @@ program
     }
     const stats = await runSync(config, process.stdout, process.stdin);
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
-    await runCollectionCheck(config, true, 1, process.stdout);
+    await runCollectionCheck(config, 1, process.stdin, process.stdout);
   });
 
 program
@@ -65,7 +66,7 @@ program
     const config = await loadConfig(process.stdout);
     const stats = await runSync(config, process.stdout, process.stdin);
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
-    await runCollectionCheck(config, true, 1, process.stdout); 
+    await runCollectionCheck(config, 1, process.stdin, process.stdout);
   });
 
 program
@@ -74,6 +75,16 @@ program
   .action(async () => {
     const config = await loadConfig(process.stdout);
     await runChat(config, process.stdin, process.stdout);
+  });
+
+program
+  .command("collection-check")
+  .description("Check the status of the Qdrant collection")
+  .option("-s, --samples <number>", "The number of sample points to display", "0")
+  .aliases(["cc"])
+  .action(async (options) => {
+    const config = await loadConfig(process.stdout);
+    await runCollectionCheck(config, parseInt(options.samples), process.stdin, process.stdout);
   });
 
 try {
