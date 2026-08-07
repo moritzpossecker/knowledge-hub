@@ -45,7 +45,7 @@ export async function runSync(
       config.setup.managedViaDocker,
       input,
       output
-    )
+    );
 
     await checkModelsInstalled(
       config.setup.ollama.baseUrl,
@@ -61,6 +61,11 @@ export async function runSync(
     await qdrant.ensureCollection(config.sync.collectionName, vectorSize, recreate);
     progress(output, "✓ Collection ready — starting upload\n\n");
 
+
+    const indexedModifiedAt = recreate
+      ? new Map<string, string>()
+      : await loadIndexedModifiedTimes(qdrant, config);
+
     const existing = new Set<string>();
     let totalChunks = 0;
 
@@ -75,8 +80,19 @@ export async function runSync(
         continue;
       }
 
-      existing.add(chunks[0].documentId);
-      await qdrant.deleteDocumentPoints(config.sync.collectionName, chunks[0].documentId);
+      const documentId = chunks[0].documentId;
+      existing.add(documentId);
+
+      const currentModifiedAt = String(chunks[0].modifiedAt);
+      const storedModifiedAt = indexedModifiedAt.get(documentId);
+
+      if (storedModifiedAt === currentModifiedAt) {
+        progress(output, "\t↳ skipped (file unchanged)\n");
+        totalChunks += chunks.length;
+        continue;
+      }
+
+      await qdrant.deleteDocumentPoints(config.sync.collectionName, documentId);
       progress(output, `\t↳ embedding and uploading ${chunks.length} chunks\n`);
       await upsertChunks(qdrant, config, chunks, (uploaded, total) => {
         progress(output, `\t↳ uploaded ${uploaded}/${total} chunks\n`);
@@ -99,6 +115,33 @@ export async function runSync(
 async function inferVectorSize(config: Config): Promise<number> {
   const embeddings = await ollamaEmbed(config.setup.ollama.baseUrl, config.sync.embedModel, ["vector size probe"]);
   return embeddings[0].length;
+}
+
+async function loadIndexedModifiedTimes(
+  qdrant: QdrantClient,
+  config: Config
+): Promise<Map<string, string>> {
+  let offset: unknown;
+  const modifiedTimes = new Map<string, string>();
+
+
+  do {
+    const page = await qdrant.scrollPayloads(config.sync.collectionName, 256, offset);
+
+    for (const payload of page.payloads) {
+      const documentId = payloadString(payload, "document_id");
+      const modifiedAt = payloadString(payload, "modified_at");
+
+      if (documentId && modifiedAt) {
+        modifiedTimes.set(documentId, modifiedAt);
+      }
+    }
+
+    offset = page.nextOffset;
+  } while (offset !== undefined && offset !== null);
+
+
+  return modifiedTimes;
 }
 
 async function upsertChunks(
