@@ -1,10 +1,10 @@
 import { Config } from "../config/config.js";
 import { payloadString, QdrantClient } from "../qdrant.js";
 import {
-  heading,
   note,
   panel,
   style,
+  subheading,
 } from "../ui.js";
 import { checkServersRunning } from "./serversRunningCheck.js";
 
@@ -58,10 +58,9 @@ export async function runCollectionCheck(
     return;
   }
 
-  heading(
+  subheading(
     output,
     "Sample payloads",
-    `${sample.payloads.length} of ${samples} requested samples`,
   );
 
   sample.payloads.forEach((payload, index) => {
