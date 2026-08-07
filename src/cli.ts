@@ -39,13 +39,21 @@ program
 program
   .command("sync")
   .argument("[path-or-git-url]", "Markdown root or Git URL")
-  .description("Ingest markdown docs and run collection check afterwards")
-  .action(async (pathOrGitUrl?: string) => {
+  .option("-p, --prune", "Prune deleted files from the index")
+  .option("-r, --recreate", "Recreate the index, removing all existing data and re-indexing all files")
+  .description("Syncs markdown docs and runs collection-check afterwards")
+  .action(async (options, pathOrGitUrl?: string) => {
     const config = await loadConfig(process.stdout);
     if (pathOrGitUrl) {
       config.sync.markdownRootPath = pathOrGitUrl;
     }
-    const stats = await runSync(config, process.stdout, process.stdin);
+    const stats = await runSync(
+      config, 
+      options.prune || false,
+      options.recreate || false,
+      process.stdout, 
+      process.stdin
+    );
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
     await runCollectionCheck(config, 1, process.stdin, process.stdout);
   });
@@ -64,7 +72,7 @@ program
     );
 
     const config = await loadConfig(process.stdout);
-    const stats = await runSync(config, process.stdout, process.stdin);
+    const stats = await runSync(config, false, false, process.stdout, process.stdin);
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
     await runCollectionCheck(config, 1, process.stdin, process.stdout);
   });

@@ -17,6 +17,8 @@ function progress(out: NodeJS.WritableStream | undefined, message: string): void
 
 export async function runSync(
   config: Config,
+  prune: boolean,
+  recreate: boolean,
   output: NodeJS.WritableStream,
   input: NodeJS.ReadableStream
 ): Promise<SyncStats> {
@@ -56,8 +58,7 @@ export async function runSync(
 
     const qdrant = new QdrantClient(config);
     const vectorSize = await inferVectorSize(config);
-    // TODO: inject via option --recreate
-    await qdrant.ensureCollection(config.sync.collectionName, vectorSize, false);
+    await qdrant.ensureCollection(config.sync.collectionName, vectorSize, recreate);
     progress(output, "✓ Collection ready — starting upload\n\n");
 
     const existing = new Set<string>();
@@ -84,9 +85,8 @@ export async function runSync(
       progress(output, "\t✓ complete\n");
     }
 
-    // TODO: inject via option --prune
-    if (false) {
-      progress(output, "\n› Removing vectors for missing source files\n");
+    if (prune) {
+      progress(output, "\n› Prune: Removing vectors for missing source files\n");
       await deleteMissingDocuments(qdrant, config, existing);
     }
 
