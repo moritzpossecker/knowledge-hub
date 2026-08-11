@@ -7,6 +7,7 @@ import { runUpdateConfig } from "./config/updateConfig.js";
 import { loadConfig } from "./config/config.js";
 import { runChat } from "./chat/chat.js";
 import { runCollectionCheck } from "./checks/collectionCheck.js";
+import { runWeb } from "./web.js";
 
 const program = new Command();
 
@@ -83,6 +84,16 @@ program
   .action(async () => {
     const config = await loadConfig(process.stdout);
     await runChat(config, process.stdin, process.stdout);
+  });
+
+program
+  .command("web")
+  .description("Start the local web UI")
+  .option("-p, --port <port>", "Port for the web UI", "3000")
+  .option("--prod", "Run a production build (next start) instead of next dev")
+  .action(async (options) => {
+    const config = await loadConfig(process.stdout);
+    await runWeb(config, parseInt(options.port), !!options.prod, process.stdin, process.stdout);
   });
 
 program
