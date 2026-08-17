@@ -15,12 +15,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!question) {
     return NextResponse.json({ error: "question is required" }, { status: 400 });
   }
+  const model = typeof body.model === "string" && body.model.trim() ? body.model.trim() : undefined;
 
   const userMessage = addMessage(id, "user", question);
 
   const { qdrant, config } = await getQdrantClient();
+  const chatConfig = model && model !== config.chat.chatModel ? { ...config, chat: { ...config.chat, chatModel: model } } : config;
   try {
-    const { answer, sources } = await askQuestion(qdrant, config, question, req.signal);
+    const { answer, sources } = await askQuestion(qdrant, chatConfig, question, req.signal);
     const assistantMessage = addMessage(id, "assistant", answer, sources);
     return NextResponse.json({ userMessage, assistantMessage }, { status: 201 });
   } catch (err) {

@@ -26,5 +26,6 @@ export const defaultConfig: Config = {
     systemPrompt: "You are a documentation assistant. Answer only from the provided context. If the answer is not in the context, say clearly that you could not find it in the indexed docs. When useful, cite source paths from the context.",
     retrievalModel: "embeddinggemma",
     chatModel: "llama3.1",
+    availableChatModels: ["llama3.1"],
   },
 };

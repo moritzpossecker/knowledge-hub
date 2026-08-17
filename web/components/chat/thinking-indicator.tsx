@@ -6,13 +6,11 @@ const phrases = [
   "Thinking",
   "Digging through the docs",
   "Cooking",
-  "Noodling",
   "Connecting the dots",
   "Percolating",
   "Searching the archives",
   "Reticulating splines",
-  "Chasing down sources",
-  "Mulling it over"
+  "Chasing down sources"
 ];
 
 export function ThinkingIndicator() {

@@ -129,7 +129,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-weight: 500;
+    font-weight: 400;
     -webkit-font-smoothing: auto;
   }
   html {
@@ -149,6 +149,62 @@
 .animate-shimmer {
   background-size: 250% 100%;
   animation: shimmer 2.8s linear infinite;
+}
+
+.hljs {
+  color: var(--foreground);
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-tag .hljs-name {
+  color: oklch(0.75 0.16 300);
+}
+
+.hljs-string,
+.hljs-addition,
+.hljs-attr,
+.hljs-regexp {
+  color: oklch(0.78 0.14 150);
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: oklch(0.78 0.14 70);
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-section {
+  color: oklch(0.78 0.13 230);
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute {
+  color: oklch(0.78 0.12 30);
+}
+
+.hljs-deletion {
+  color: var(--destructive);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
 }
 
 .prose-invert {

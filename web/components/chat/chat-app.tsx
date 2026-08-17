@@ -21,6 +21,8 @@ export function ChatApp() {
   const [sending, setSending] = useState(false);
   const [sourcePath, setSourcePath] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [models, setModels] = useState<string[]>([]);
+  const [model, setModel] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -48,6 +50,16 @@ export function ChatApp() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then((res) => res.json())
+      .then((data: { models: string[]; defaultModel: string }) => {
+        setModels(data.models);
+        setModel(data.defaultModel);
+      })
+      .catch(() => {});
   }, []);
 
   const handleNew = useCallback(async () => {
@@ -95,7 +107,7 @@ export function ChatApp() {
         const res = await fetch(`/api/sessions/${sessionId}/messages`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question: text }),
+          body: JSON.stringify({ question: text, model }),
           signal: controller.signal
         });
         if (!res.ok) {
@@ -126,7 +138,7 @@ export function ChatApp() {
         abortControllerRef.current = null;
       }
     },
-    [activeId, loadSessions]
+    [activeId, loadSessions, model]
   );
 
   const handleStop = useCallback(() => {
@@ -181,7 +193,15 @@ export function ChatApp() {
                     What do you want to know?
                   </h1>
                   <div className="w-full max-w-2xl">
-                    <MessageInput onSend={handleSend} onStop={handleStop} sending={sending} autoFocus />
+                    <MessageInput
+                      onSend={handleSend}
+                      onStop={handleStop}
+                      sending={sending}
+                      autoFocus
+                      models={models}
+                      model={model}
+                      onModelChange={setModel}
+                    />
                   </div>
                 </div>
               ) : (
@@ -196,7 +216,14 @@ export function ChatApp() {
                   </ScrollArea>
                   <div className="px-6 pb-6">
                     <div className="mx-auto max-w-3xl">
-                      <MessageInput onSend={handleSend} onStop={handleStop} sending={sending} />
+                      <MessageInput
+                        onSend={handleSend}
+                        onStop={handleStop}
+                        sending={sending}
+                        models={models}
+                        model={model}
+                        onModelChange={setModel}
+                      />
                     </div>
                   </div>
                 </>
