@@ -51,7 +51,7 @@ export async function runChat(
       if (sources.length) {
         output.write("\nSources\n");
         for (const source of sources) {
-          output.write(`  • ${source}\n`);
+          output.write(`  • ${source.sourcePath} — ${source.headingPath}\n`);
         }
         output.write("\n");
       }
@@ -61,12 +61,18 @@ export async function runChat(
   }
 }
 
-async function askQuestion(
+export interface Source {
+  sourcePath: string;
+  headingPath: string;
+}
+
+export async function askQuestion(
   qdrant: QdrantClient,
   config: Config,
-  question: string
-): Promise<{ answer: string; sources: string[] }> {
-  const embeddings = await ollamaEmbed(config.setup.ollama.baseUrl, config.chat.retrievalModel, [question]);
+  question: string,
+  signal?: AbortSignal
+): Promise<{ answer: string; sources: Source[] }> {
+  const embeddings = await ollamaEmbed(config.setup.ollama.baseUrl, config.chat.retrievalModel, [question], signal);
   const payloads = await qdrant.search(
     config.sync.collectionName,
     embeddings[0],
@@ -79,13 +85,13 @@ async function askQuestion(
   }
 
   const contextParts: string[] = [];
-  const sourceSet = new Set<string>();
+  const sourceMap = new Map<string, Source>();
   for (const payload of payloads) {
     const sourcePath = payloadString(payload, "source_path");
     const headingPath = payloadString(payload, "heading_path");
     const content = payloadString(payload, "content");
     contextParts.push(`Source: ${sourcePath}\nSection: ${headingPath}\nContent:\n${content}`);
-    sourceSet.add(`${sourcePath} — ${headingPath}`);
+    sourceMap.set(`${sourcePath} — ${headingPath}`, { sourcePath, headingPath });
   }
 
   const prompt = `Use the following documentation context to answer the question. If the answer is not in the context, say so clearly.
@@ -95,8 +101,18 @@ ${contextParts.join("\n\n---\n\n")}
 
 Question: ${question}`;
 
+  const sources = [...sourceMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, source]) => source);
+
   return {
-    answer: await ollamaChat(config.setup.ollama.baseUrl, config.chat.chatModel, config.chat.systemPrompt, prompt),
-    sources: [...sourceSet].sort()
+    answer: await ollamaChat(
+      config.setup.ollama.baseUrl,
+      config.chat.chatModel,
+      config.chat.systemPrompt,
+      prompt,
+      signal
+    ),
+    sources
   };
 }

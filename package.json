@@ -4,18 +4,26 @@
   "description": "Index Markdown documentation with Ollama and Qdrant, then chat with it from the terminal.",
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "web"
+  ],
   "bin": {
     "knowledge-hub": "dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc",
     "test": "npm run build && node --test dist/test/*.test.js",
-    "start": "node dist/src/cli.js"
+    "start": "node dist/src/cli.js",
+    "web:dev": "npm run dev --workspace web",
+    "web:build": "npm run build && npm run build --workspace web"
   },
   "dependencies": {
-    "commander": "^14.0.0"
+    "better-sqlite3": "^13.0.3",
+    "commander": "^14.0.0",
+    "undici": "^7.29.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.13.3",
     "typescript": "^5.9.2"
   },

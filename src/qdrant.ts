@@ -110,7 +110,8 @@ export class QdrantClient {
   async scrollPayloads(
     collectionName: string,
     limit: number,
-    offset?: unknown
+    offset?: unknown,
+    filter?: Record<string, unknown>
   ): Promise<{ payloads: Array<Record<string, unknown>>; nextOffset?: unknown }> {
     const body: Record<string, unknown> = {
       limit,
@@ -119,6 +120,9 @@ export class QdrantClient {
     };
     if (offset !== undefined) {
       body.offset = offset;
+    }
+    if (filter !== undefined) {
+      body.filter = filter;
     }
     const response = await this.request<ScrollResponse>(`/collections/${encodeURIComponent(collectionName)}/points/scroll`, {
       method: "POST",
