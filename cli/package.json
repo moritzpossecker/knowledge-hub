@@ -1,0 +1,32 @@
+{
+  "name": "@moritzpossecker/knowledge-hub",
+  "version": "0.1.0",
+  "description": "Index Markdown documentation with Ollama and Qdrant, then chat with it from the terminal.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "knowledge-hub": "dist/src/cli.js"
+  },
+  "scripts": {
+    "build:core": "cd ../packages/core && npm run build",
+    "prebuild": "npm run build:core",
+    "build": "tsc",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "start": "node dist/src/cli.js"
+  },
+  "dependencies": {
+    "@knowledge-hub/core": "file:../packages/core",
+    "commander": "^14.0.0",
+    "undici": "^8.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
