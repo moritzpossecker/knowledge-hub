@@ -4,13 +4,8 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 import { Badge } from "@/src/components/ui/badge";
 import { Markdown } from "@/src/components/markdown";
-import type { ChatMessage } from "@/src/lib/types";
+import type { ChatMessage, Source } from "@/src/lib/types";
 import { cn } from "@/src/lib/utils";
-
-interface Source {
-  sourcePath: string;
-  headingPath?: string | null;
-}
 
 interface SourceCodeProps extends HTMLAttributes<HTMLElement> {
   inline?: boolean;
@@ -54,7 +49,7 @@ export function MessageBubble({
   onSourceClick,
 }: {
   message: ChatMessage;
-  onSourceClick: (sourcePath: string) => void;
+  onSourceClick: (source: Source) => void;
 }) {
   const isUser = message.role === "user";
 
@@ -103,7 +98,7 @@ export function MessageBubble({
             return (
               <button
                 type="button"
-                onClick={() => onSourceClick(source.sourcePath)}
+                onClick={() => onSourceClick(source)}
                 aria-label={`${source.sourcePath}`}
                 className="mx-0.5 inline-flex translate-y-[-1px] align-middle"
               >
@@ -152,7 +147,7 @@ export function MessageBubble({
             <button
               key={`${source.sourcePath}-${source.headingPath ?? "null"}-${index}`}
               type="button"
-              onClick={() => onSourceClick(source.sourcePath)}
+              onClick={() => onSourceClick(source)}
               className="cursor-pointer"
             >
               <Badge

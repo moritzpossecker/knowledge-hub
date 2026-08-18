@@ -1,6 +1,6 @@
 export interface Source {
   sourcePath: string;
-  headingPath: string;
+  headingPath?: string | null;
 }
 
 export interface ChatMessage {

@@ -11,7 +11,7 @@ import { Button } from "@/src/components/ui/button";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/src/components/ui/resizable";
 import { cn } from "@/src/lib/utils";
-import type { ChatMessage, SessionDetail, SessionSummary } from "@/src/lib/types";
+import type { ChatMessage, SessionDetail, SessionSummary, Source } from "@/src/lib/types";
 import { PanelLeftOpen } from "lucide-react";
 
 export function ChatApp() {
@@ -19,7 +19,7 @@ export function ChatApp() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
-  const [sourcePath, setSourcePath] = useState<string | null>(null);
+  const [source, setSource] = useState<Source | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [models, setModels] = useState<string[]>([]);
   const [model, setModel] = useState<string | null>(null);
@@ -145,12 +145,12 @@ export function ChatApp() {
     abortControllerRef.current?.abort();
   }, []);
 
-  const handleSourceClick = useCallback((path: string) => {
-    setSourcePath(path);
+  const handleSourceClick = useCallback((source: Source) => {
+    setSource(source);
   }, []);
 
   const handleCloseSource = useCallback(() => {
-    setSourcePath(null);
+    setSource(null);
   }, []);
 
   return (
@@ -230,11 +230,11 @@ export function ChatApp() {
               )}
             </div>
           </ResizablePanel>
-          {sourcePath && (
+          {source && (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={420} minSize={320} maxSize={720}>
-                <SourcePanel sourcePath={sourcePath} onClose={handleCloseSource} />
+                <SourcePanel source={source} onClose={handleCloseSource} />
               </ResizablePanel>
             </>
           )}
