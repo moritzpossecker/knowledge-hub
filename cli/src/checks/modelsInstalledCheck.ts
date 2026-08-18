@@ -1,5 +1,19 @@
+import { error, success, confirm } from "../ui.js";
+import { getAvailableModels, normalizeModelName } from "@knowledge-hub/core";
 import readline from "node:readline/promises";
-import { confirm, success, error } from "../ui.js";
+
+async function getMissingModels(
+  baseUrl: string,
+  requiredModels: string[]
+): Promise<string[]> {
+  const installedModels = await getAvailableModels(baseUrl);
+  const uniqueRequired = Array.from(new Set(requiredModels));
+
+  return uniqueRequired.filter((model) => {
+    const normalizedModel = normalizeModelName(model);
+    return !installedModels.includes(normalizedModel);
+  });
+}
 
 export async function checkModelsInstalled(
   ollamaBaseUrl: string,
@@ -54,37 +68,6 @@ export async function checkModelsInstalled(
   }
 
   success(output, "All required Ollama models are now installed.");
-}
-
-interface TagsResponse {
-  models?: Array<{ name: string }>;
-}
-
-function normalizeModelName(model: string): string {
-  return model.trim().replace(/:latest$/, "");
-}
-
-async function getMissingModels(
-  baseUrl: string,
-  requiredModels: string[]
-): Promise<string[]> {
-  const response = await fetch(`${baseUrl}/api/tags`);
-  if (!response.ok) {
-    throw new Error(`Ollama returned HTTP ${response.status}`);
-  }
-  const payload = (await response.json()) as TagsResponse;
-
-  const installedModels =
-    payload.models
-      ?.map((m) => normalizeModelName(m.name))
-      .filter(Boolean) ?? [];
-
-  const uniqueRequired = Array.from(new Set(requiredModels));
-
-  return uniqueRequired.filter((model) => {
-    const normalizedModel = normalizeModelName(model);
-    return !installedModels.includes(normalizedModel);
-  });
 }
 
 async function pullOllamaModel(

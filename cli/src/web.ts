@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { Config, getConfigFilePath } from "./config/config.js";
 import { checkServersRunning } from "./checks/serversRunningCheck.js";
+import { checkModelsInstalled } from "./checks/modelsInstalledCheck.js";
 
 const DOCKER_IMAGE = "ghcr.io/moritzpossecker/knowledge-hub:latest";
 const CONTAINER_NAME = "knowledge-hub-web";
@@ -17,10 +18,17 @@ export async function runWeb(stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStrea
         stdin,
         stdout
     );
+
+    await checkModelsInstalled(
+        config.setup.ollama.baseUrl,
+        [config.chat.chatModel, config.chat.retrievalModel],
+        stdin,
+        stdout
+    );
     
     const configPath = getConfigFilePath();
 
-    const containerExists = await containerExistsCheck(stdout);
+    const containerExists = await containerExistsCheck();
 
     if (containerExists) {
         stdout.write(`Container ${CONTAINER_NAME} exists, starting...\n`);
@@ -50,7 +58,7 @@ export async function runWeb(stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStrea
     stdout.write(`Web interface started on: http://localhost:${HOST_PORT}\n`);
 }
 
-async function containerExistsCheck(stdout: NodeJS.WriteStream): Promise<boolean> {
+async function containerExistsCheck(): Promise<boolean> {
     return new Promise((resolve) => {
         const proc = spawn("docker", ["ps", "-a", "--format", "{{.Names}}"], {
             stdio: ["ignore", "pipe", "pipe"],

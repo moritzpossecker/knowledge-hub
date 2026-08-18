@@ -28,7 +28,6 @@ export interface Config {
     systemPrompt: string;
     retrievalModel: string;
     chatModel: string;
-    availableChatModels: string[];
   };
 }
 
