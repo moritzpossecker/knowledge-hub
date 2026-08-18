@@ -1,7 +1,13 @@
 {
   "name": "knowledge-hub-monorepo",
   "private": true,
+  "workspaces": [
+    "web",
+    "packages/core"
+  ],
   "scripts": {
+    "core:build": "npm run build --workspace @knowledge-hub/core",
+    "web:build": "npm run build --workspace web",
     "install:core": "cd packages/core && npm install",
     "install:cli": "cd cli && npm install",
     "install:web": "cd web && npm install"
