@@ -1,33 +1,9 @@
 {
-  "name": "knowledge-hub",
-  "version": "0.1.0",
-  "description": "Index Markdown documentation with Ollama and Qdrant, then chat with it from the terminal.",
-  "license": "MIT",
-  "type": "module",
-  "workspaces": [
-    "web"
-  ],
-  "bin": {
-    "knowledge-hub": "dist/src/cli.js"
-  },
+  "name": "knowledge-hub-monorepo",
+  "private": true,
   "scripts": {
-    "build": "tsc",
-    "test": "npm run build && node --test dist/test/*.test.js",
-    "start": "node dist/src/cli.js",
-    "web:dev": "npm run dev --workspace web",
-    "web:build": "npm run build && npm run build --workspace web"
-  },
-  "dependencies": {
-    "better-sqlite3": "^13.0.3",
-    "commander": "^14.0.0",
-    "undici": "^7.29.0"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^24.13.3",
-    "typescript": "^5.9.2"
-  },
-  "engines": {
-    "node": ">=20"
+    "install:core": "cd packages/core && npm install",
+    "install:cli": "cd cli && npm install",
+    "install:web": "cd web && npm install"
   }
 }
