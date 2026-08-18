@@ -1,6 +1,6 @@
 {
   "name": "@moritzpossecker/knowledge-hub",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Index Markdown documentation with Ollama and Qdrant, then chat with it from the terminal.",
   "license": "MIT",
   "type": "module",
