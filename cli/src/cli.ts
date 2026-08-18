@@ -100,7 +100,8 @@ program
   .command("web")
   .description("Start and open the web interface in Docker")
   .action(async () => {
-    await runWeb(process.stdout);
+    const config = await loadConfig(process.stdout);
+    await runWeb(process.stdin, process.stdout, config);
   });
 
 try {
