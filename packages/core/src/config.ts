@@ -1,4 +1,4 @@
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -32,6 +32,35 @@ export interface Config {
   };
 }
 
+function getConfigDir(): string {
+  const envConfig = process.env.KH_CONFIG_DIR;
+  if (envConfig) {
+    return envConfig;
+  }
+
+  const appName = "knowledge-hub";
+
+  // Linux/macOS: XDG_CONFIG_HOME oder ~/.config
+  if (process.platform !== "win32") {
+    const xdgConfig = process.env.XDG_CONFIG_HOME;
+    if (xdgConfig) {
+      return path.join(xdgConfig, appName);
+    }
+    return path.join(os.homedir(), ".config", appName);
+  }
+
+  // Windows: %APPDATA% oder %LOCALAPPDATA%
+  const appData = process.env.APPDATA;
+  if (appData) {
+    return path.join(appData, appName);
+  }
+  return path.join(os.homedir(), "AppData", "Local", appName);
+}
+
+export function getConfigFilePath(): string {
+  return path.join(getConfigDir(), "config.json");
+}
+
 async function exists(filePath: string): Promise<boolean> {
   try {
     await access(filePath);
@@ -41,7 +70,7 @@ async function exists(filePath: string): Promise<boolean> {
   }
 }
 
-export async function readConfigFile(filePath: string): Promise<Config | undefined> {
+async function readConfigFile(filePath: string): Promise<Config | undefined> {
   if (!(await exists(filePath))) {
     return undefined;
   }
@@ -65,27 +94,18 @@ export async function readConfigFile(filePath: string): Promise<Config | undefin
   return config;
 }
 
-export async function loadConfig(filePath: string = "config.json"): Promise<Config> {
-  const config = await readConfigFile(filePath);
+export async function loadConfig(): Promise<Config> {
+  const config = await readConfigFile(getConfigFilePath());
   if (!config) {
     throw new Error("Configuration file not found. Please run 'knowledge-hub config'.\n");
   }
   return config;
 }
 
-export function expandPath(value: string): string {
-  if (!value) {
-    return value;
-  }
-  if (value === "~") {
-    return os.homedir();
-  }
-  if (value.startsWith("~/")) {
-    return path.resolve(os.homedir(), value.slice(2));
-  }
-  return path.resolve(value);
-}
+export async function writeConfigFile(config: Config): Promise<void> {
+  const configDir = getConfigDir();
 
-export async function writeConfigFile(filePath: string, config: Config): Promise<void> {
-  await writeFile(filePath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  await mkdir(configDir, { recursive: true });
+
+  await writeFile(getConfigFilePath(), `${JSON.stringify(config, null, 2)}\n`, "utf8");
 }

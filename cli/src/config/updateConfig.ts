@@ -1,10 +1,8 @@
 import readline from "node:readline/promises";
-import { ask, confirm, error, heading, note, subheading, success } from "../ui.js";
-import { Config, readConfigFile, writeConfigFile } from "./config.js";
+import { ask, confirm, error, heading, subheading, success } from "../ui.js";
+import { Config, getConfigFilePath, loadCoreConfig, writeConfigFile } from "./config.js";
 import { defaultConfig } from "./defaultConfig.js";
 import { openInEditor } from "./editor.js";
-
-const configPath = "config.json";
 
 export async function runUpdateConfig(
   manual: boolean,
@@ -16,6 +14,7 @@ export async function runUpdateConfig(
 ): Promise<void> {
   if (manual) {
     try {
+      const configPath = getConfigFilePath();
       await openInEditor(configPath);
       success(output, `Manual configuration of ${configPath} complete.`);
     } catch (err) {
@@ -23,9 +22,11 @@ export async function runUpdateConfig(
     }
     return;
   }
-
-  let config = await readConfigFile(configPath);
-  if (!config) {
+  let config: Config;
+  try {
+    config = await loadCoreConfig();
+  }
+  catch {
     config = JSON.parse(JSON.stringify(defaultConfig)) as Config;
   }
 
@@ -46,9 +47,9 @@ export async function runUpdateConfig(
       config = await configureChat(rl, output, config);
     }
 
-    await writeConfigFile(configPath, config);
+    await writeConfigFile(config);
     output.write("\n");
-    success(output, `Successfully saved configuration to ${configPath}`);
+    success(output, `Successfully saved configuration.`);
   } finally {
     rl.close();
   }

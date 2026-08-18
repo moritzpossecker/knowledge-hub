@@ -8,6 +8,8 @@
     "knowledge-hub": "dist/src/cli.js"
   },
   "scripts": {
+    "build:core": "cd ../packages/core && npm run build",
+    "prebuild": "npm run build:core",
     "build": "tsc",
     "test": "npm run build && node --test dist/test/*.test.js",
     "start": "node dist/src/cli.js"
