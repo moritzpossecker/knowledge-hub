@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { Config, getConfigFilePath } from "./config/config.js";
 import { checkServersRunning } from "./checks/serversRunningCheck.js";
 
-const DOCKER_IMAGE = "ghcr.io/your-org/knowledge-hub:latest";
+const DOCKER_IMAGE = "ghcr.io/moritzpossecker/knowledge-hub:latest";
 const CONTAINER_NAME = "knowledge-hub-web";
 const HOST_PORT = "3000";
 const CONTAINER_PORT = "3000";
@@ -36,6 +36,7 @@ export async function runWeb(stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStrea
                 "run",
                 "-d",
                 "--name", CONTAINER_NAME,
+                "--add-host", "host.docker.internal:host-gateway",
                 "-p", `${HOST_PORT}:${CONTAINER_PORT}`,
                 "-e", `KH_DB_PATH=/var/lib/knowledge-hub/data/knowledge-hub.db`,
                 "-e", `KH_CONFIG_DIR=/var/lib/knowledge-hub/config`,
