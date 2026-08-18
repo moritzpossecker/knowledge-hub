@@ -36,10 +36,6 @@ export async function askQuestion(
     config.chat.scoreThreshold
   );
 
-  if (!payloads.length) {
-    return { answer: "I could not find a relevant answer in the indexed documentation.", sources: [] };
-  }
-
   const contextParts: string[] = [];
   const sourceMap = new Map<string, Source>();
 
@@ -51,7 +47,7 @@ export async function askQuestion(
     sourceMap.set(`${sourcePath} — ${headingPath}`, { sourcePath, headingPath });
   }
 
-  const prompt = `Use the following documentation context to answer the question. If the answer is not in the context, say so clearly.\n\nContext:\n${contextParts.join("\n\n---\n\n")}\n\nQuestion: ${question}`;
+  const userPrompt = `Context:\n${contextParts.join("\n\n---\n\n")}\n\nQuestion: ${question}`;
 
   const chatResponse = await fetch(`${config.setup.ollama.baseUrl.replace(/\/+$/, "")}/api/chat`, {
     method: "POST",
@@ -61,7 +57,7 @@ export async function askQuestion(
       stream: false,
       messages: [
         { role: "system", content: config.chat.systemPrompt },
-        { role: "user", content: prompt },
+        { role: "user", content: userPrompt },
       ],
     }),
     signal,
