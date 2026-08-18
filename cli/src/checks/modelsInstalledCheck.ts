@@ -8,7 +8,7 @@ export async function checkModelsInstalled(
   output: NodeJS.WritableStream
 ): Promise<void> {
   let missing: string[];
-  
+
   try {
     missing = await getMissingModels(ollamaBaseUrl, requiredModels);
   } catch (err) {
@@ -19,12 +19,14 @@ export async function checkModelsInstalled(
   if (missing.length === 0) {
     return;
   }
+
   const rl = readline.createInterface({ input, output });
   let installMissingModels = false;
 
   try {
     installMissingModels = await confirm(
-      rl, output,
+      rl,
+      output,
       `Missing Ollama models: ${missing.join(", ")}. Install them automatically?`,
       true
     );
@@ -33,14 +35,17 @@ export async function checkModelsInstalled(
   }
 
   if (!installMissingModels) {
-    error(output, `Cannot proceed without required models. Please run 'ollama pull <model>' manually.`);
+    error(
+      output,
+      `Cannot proceed without required models. Please run 'ollama pull <model>' manually.`
+    );
     process.exit(1);
   }
 
   for (const model of missing) {
-    output.write(`Installing Ollama model ${model} ...\n`);
+    output.write(`Installing Ollama model ${model}...\n`);
     try {
-      await pullOllamaModel(ollamaBaseUrl, model);
+      await pullOllamaModel(ollamaBaseUrl, model, output);
       success(output, `Successfully installed ${model}.`);
     } catch (err) {
       error(output, `Failed to install ${model}: ${(err as Error).message}`);
@@ -56,20 +61,23 @@ interface TagsResponse {
 }
 
 function normalizeModelName(model: string): string {
-  // If the user specifies a model without a tag, Ollama defaults to :latest.
-  // We strip :latest so 'llama3.1' and 'llama3.1:latest' are treated as the same.
   return model.trim().replace(/:latest$/, "");
 }
 
-async function getMissingModels(baseUrl: string, requiredModels: string[]): Promise<string[]> {
+async function getMissingModels(
+  baseUrl: string,
+  requiredModels: string[]
+): Promise<string[]> {
   const response = await fetch(`${baseUrl}/api/tags`);
   if (!response.ok) {
     throw new Error(`Ollama returned HTTP ${response.status}`);
   }
   const payload = (await response.json()) as TagsResponse;
 
-  const installedModels = payload.models?.map((m) => normalizeModelName(m.name))
-    .filter(Boolean) ?? [];
+  const installedModels =
+    payload.models
+      ?.map((m) => normalizeModelName(m.name))
+      .filter(Boolean) ?? [];
 
   const uniqueRequired = Array.from(new Set(requiredModels));
 
@@ -79,14 +87,70 @@ async function getMissingModels(baseUrl: string, requiredModels: string[]): Prom
   });
 }
 
-async function pullOllamaModel(baseUrl: string, model: string): Promise<void> {
+async function pullOllamaModel(
+  baseUrl: string,
+  model: string,
+  output: NodeJS.WritableStream
+): Promise<void> {
   const response = await fetch(`${baseUrl}/api/pull`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name: model, stream: false })
+    body: JSON.stringify({ name: model, stream: true }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
+
+  if (!response.body) {
+    throw new Error("No response body from Ollama");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  let lastStatus = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      // Ollama sends one JSON object per line
+      const lines = chunk.split("\n").filter((l) => l.trim() !== "");
+
+      for (const line of lines) {
+        const event = JSON.parse(line) as {
+          status: string;
+          digest?: string;
+          total?: number;
+          completed?: number;
+        };
+
+        const statusText = event.status;
+
+        if (statusText !== lastStatus) {
+          // Neue Phase → neue Zeile, damit der Nutzer den Wechsel sieht
+          if (lastStatus !== "") {
+            output.write("\n");
+          }
+          lastStatus = statusText;
+        }
+
+        if (event.total != null && event.completed != null) {
+          const percent = Math.round((event.completed / event.total) * 100);
+          output.write(`\r${statusText}... ${percent}%`);
+        } else {
+          // Kein Fortschrittsbalken möglich, aber Status anzeigen
+          output.write(`\r${statusText}...`);
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  // Zeilenumbruch nach dem letzten "\r"-Output
+  output.write("\n");
 }
