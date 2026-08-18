@@ -16,8 +16,15 @@ function resolveDockerNetworkUrl(urlStr: string): string {
 export async function loadConfig(): Promise<Config> {
   const config = await loadCoreConfig();
 
-  config.setup.qdrant.baseUrl = resolveDockerNetworkUrl(config.setup.qdrant.baseUrl);
-  config.setup.ollama.baseUrl = resolveDockerNetworkUrl(config.setup.ollama.baseUrl);
+  if (process.env.NODE_ENV !== "development") {
+    config.setup.qdrant.baseUrl = resolveDockerNetworkUrl(
+      config.setup.qdrant.baseUrl,
+    );
+
+    config.setup.ollama.baseUrl = resolveDockerNetworkUrl(
+      config.setup.ollama.baseUrl,
+    );
+  }
 
   return config;
 }
