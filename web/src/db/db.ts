@@ -4,8 +4,6 @@ import path from "node:path";
 
 let db: Database.Database | undefined;
 
-const DB_PATH = "/var/lib/knowledge-hub/data/knowledge-hub.db";
-
 export function getDb(): Database.Database {
   if (db) {
     return db;

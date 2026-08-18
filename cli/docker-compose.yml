@@ -1,4 +1,4 @@
-name: knowledge-hub
+name: knowledge-hub-services
 
 services:
   qdrant:

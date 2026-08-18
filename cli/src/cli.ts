@@ -7,6 +7,7 @@ import { loadConfig } from "./config/config.js";
 import { runChat } from "./chat/chat.js";
 import { runCollectionCheck } from "./checks/collectionCheck.js";
 import { error, header, success } from "./ui.js";
+import { runWeb } from "./web.js";
 
 const program = new Command();
 
@@ -48,10 +49,10 @@ program
       config.sync.markdownRootPath = pathOrGitUrl;
     }
     const stats = await runSync(
-      config, 
+      config,
       options.prune || false,
       options.recreate || false,
-      process.stdout, 
+      process.stdout,
       process.stdin
     );
     success(process.stdout, `Indexed ${stats.files} files and ${stats.chunks} chunks.`);
@@ -93,6 +94,13 @@ program
   .action(async (options) => {
     const config = await loadConfig(process.stdout);
     await runCollectionCheck(config, parseInt(options.samples), process.stdin, process.stdout);
+  });
+
+program
+  .command("web")
+  .description("Start and open the web interface in Docker")
+  .action(async () => {
+    await runWeb(process.stdout);
   });
 
 try {
