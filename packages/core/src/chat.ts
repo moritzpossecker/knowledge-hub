@@ -12,7 +12,8 @@ export async function askQuestion(
   question: string,
   signal?: AbortSignal
 ): Promise<{ answer: string; sources: Source[] }> {
-  const embeddings = await fetch(`${config.setup.ollama.baseUrl.replace(/\/+$/, "")}/api/embed`, {
+  
+  const embeddings = await fetch(`${config.setup.ollama.baseUrl}/api/embed`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ model: config.sync.embedModel, input: [question] }),
@@ -48,15 +49,16 @@ export async function askQuestion(
   }
 
   const userPrompt = `Context:\n${contextParts.join("\n\n---\n\n")}\n\nQuestion: ${question}`;
+  const systemPrompt = config.chat.systemPrompt + "\nWhen useful, cite source paths from the context. Do it by writing the source path of the source in double square brackets, e.g. [toc.md].";
 
-  const chatResponse = await fetch(`${config.setup.ollama.baseUrl.replace(/\/+$/, "")}/api/chat`, {
+  const chatResponse = await fetch(`${config.setup.ollama.baseUrl}/api/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       model: config.chat.chatModel,
       stream: false,
       messages: [
-        { role: "system", content: config.chat.systemPrompt },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
     }),

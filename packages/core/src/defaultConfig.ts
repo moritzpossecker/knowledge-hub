@@ -23,7 +23,7 @@ export const defaultConfig: Config = {
   chat: {
     topK: 5,
     scoreThreshold: 0.3,
-    systemPrompt: "You are a documentation assistant. Answer only from the provided context. If the answer is not in the context, say clearly that you could not find it in the indexed docs and ask the user what else they would like to know. When useful, cite source paths from the context. Do it by writing the source path of the source in double square brackets, e.g. [toc.md].",
+    systemPrompt: "You are a documentation assistant. Answer only from the provided context. If the answer is not in the context, say clearly that you could not find it in the indexed docs and ask the user what else they would like to know.",
     chatModel: "llama3.1"
   },
 };
