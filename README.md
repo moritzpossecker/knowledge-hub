@@ -1,20 +1,34 @@
-# Knowledge Hub TypeScript CLI
+# Knowledge Hub
 
-Diese TypeScript-CLI setzt die gewünschten Kommandos mit Commander um:
+[Deutsch](README.de.md) | **English**
 
-- `config` — fragt `config.json` interaktiv ab. Qdrant wird als `qdrantBaseUrl` plus `qdrantGrpcPort` gespeichert. Bei nicht erreichbaren lokalen Diensten kann es Docker Compose mit den gewählten HTTP-, gRPC- und Ollama-Host-Ports starten. Für entfernte Dienste wird nur auf den ausstehenden Start hingewiesen. Außerdem prüft es die gewählten Ollama-Modelle und kann fehlende Modelle installieren.
-- `ingest [path-or-git-url]` — indexiert Markdown-Dateien oder temporär geklonte Git-Repositories in Qdrant und führt danach automatisch einen Collection-Check aus.
-- `chat` — startet einen interaktiven Terminal-Chat gegen die indexierten Dokumente.
-- `web` — startet eine lokale Web-UI (Next.js) mit persistierten Chat-Sessions. Antworten zeigen anklickbare Quellen, die die zugehörigen Markdown-Inhalte (aus den Qdrant-Chunks rekonstruiert) in einer Seitenleiste anzeigen.
+An LLM-driven documentation management and retrieval system with interactive CLI and Next.js Web UI powered by Ollama and Qdrant.
 
-## Setup
+## Features
+
+- **Multi-Source Ingestion**: Ingests Markdown files from local paths or remote Git repositories (cloned temporarily).
+- **Vector Search & Grounding**: Chunks and indexes documentation into Qdrant for semantic search and retrieval-augmented generation (RAG).
+- **Service & Model Auto-Check**: Validates local Qdrant and Ollama connectivity (with optional Docker Compose orchestration) and pulls missing Ollama models.
+- **Terminal Chat**: Interactive CLI chat session grounded in indexed documents.
+- **Next.js Web UI**: Full web interface featuring chat history persistence (via SQLite) and expandable source citations with reconstructed Markdown chunk views.
+
+## Commands
+
+- `config` — Interactively configures `config.json` (`qdrantBaseUrl`, `qdrantGrpcPort`, `ollamaBaseUrl`, models, etc.). If local services are unreachable, prompts to start Docker Compose. Verifies required Ollama models and installs missing ones.
+- `ingest [path-or-git-url]` — Indexes Markdown files or temporarily cloned Git repositories into Qdrant, followed by an automatic collection verification check.
+- `chat` — Starts an interactive terminal chat session grounded on the indexed documents.
+- `web` — Starts the local Next.js web UI with persistent chat sessions. Responses include interactive source links that display reconstructed Markdown chunk contents in a dedicated sidebar. Supports `--prod` mode and Docker container execution (`ghcr.io/moritzpossecker/knowledge-hub:latest`).
+
+## Setup and Installation
+
+Install dependencies and build the workspace:
 
 ```bash
 npm install
 npm run build
 ```
 
-Danach kann die CLI lokal so gestartet werden:
+Run CLI commands locally:
 
 ```bash
 node dist/src/cli.js config
@@ -23,17 +37,28 @@ node dist/src/cli.js chat
 node dist/src/cli.js web
 ```
 
-Die Web-UI läuft standardmäßig unter `http://localhost:3000` (`--port` zum Ändern) und startet `next dev` im `web/`-Workspace. Für einen Produktions-Build vorher `npm run web:build` ausführen und dann `knowledge-hub web --prod`. Chat-Sessions werden lokal in `.knowledge-hub/chat.db` (SQLite) gespeichert.
+## Web Interface
 
-Während der Entwicklung geht auch:
+The web interface runs by default at `http://localhost:3000` (customizable via `--port`).
+
+For production builds:
+
+```bash
+npm run web:build
+node dist/src/cli.js web --prod
+```
+
+Chat sessions and history are stored locally in an SQLite database at `.knowledge-hub/chat.db`.
+
+## Development Workflow
 
 ```bash
 npm run build
 npm test
 ```
 
-## Hinweise
+## Technical Notes
 
-- Die TypeScript-Version nutzt Qdrants HTTP API über `qdrantBaseUrl`; `qdrantGrpcPort` bleibt in `config.json`, damit `config` die Docker-Compose-Portbelegung weiter abfragen und setzen kann.
-- `ingest` akzeptiert sowohl einen lokalen Pfad als auch eine Git-URL. Git-Repos werden temporär geklont.
-- `chat` speichert keine Historie persistent.
+- **Qdrant Integration**: Uses the Qdrant HTTP REST API via `qdrantBaseUrl`. `qdrantGrpcPort` is maintained in `config.json` to configure Docker Compose port bindings.
+- **Git Ingestion**: Supports remote Git repository URLs directly in `ingest`; repositories are cloned into a temporary directory during ingestion.
+- **Architecture**: Modular monorepo structuring core utilities (`@knowledge-hub/core`), CLI commands (`cli`), and the frontend (`web`).
