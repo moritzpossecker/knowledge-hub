@@ -5,6 +5,7 @@ import { checkModelsInstalled } from "./checks/modelsInstalledCheck.js";
 
 const DOCKER_IMAGE = "ghcr.io/moritzpossecker/knowledge-hub:latest";
 const CONTAINER_NAME = "knowledge-hub-web";
+const VOLUME_NAME = "knowledge-hub-data";
 const HOST_PORT = "3000";
 const CONTAINER_PORT = "3000";
 
@@ -48,6 +49,7 @@ export async function runWeb(stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStrea
                 "-p", `${HOST_PORT}:${CONTAINER_PORT}`,
                 "-e", `KH_DB_PATH=/var/lib/knowledge-hub/data/knowledge-hub.db`,
                 "-e", `KH_CONFIG_DIR=/var/lib/knowledge-hub/config`,
+                "-v", `${VOLUME_NAME}:/var/lib/knowledge-hub/data`,
                 "-v", `${configPath}:/var/lib/knowledge-hub/config/config.json:ro`,
                 DOCKER_IMAGE,
             ],
