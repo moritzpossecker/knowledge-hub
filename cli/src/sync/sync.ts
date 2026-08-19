@@ -75,7 +75,7 @@ export async function runSync(
       const rel = relative(root, file).split("\\").join("/");
       progress(output, `[${fileIndex + 1}/${files.length}]  ${rel}\n`);
 
-      const chunks = await buildChunks(root, file);
+      const chunks = await buildChunks(root, file, config.setup.ollama.baseUrl, config.sync.embedModel);
       if (!chunks.length) {
         progress(output, "\t↳ skipped (no indexable content)\n");
         continue;
