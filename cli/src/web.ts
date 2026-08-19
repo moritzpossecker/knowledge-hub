@@ -21,7 +21,7 @@ export async function runWeb(stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStrea
 
     await checkModelsInstalled(
         config.setup.ollama.baseUrl,
-        [config.chat.chatModel, config.chat.retrievalModel],
+        [config.chat.chatModel, config.sync.embedModel],
         stdin,
         stdout
     );

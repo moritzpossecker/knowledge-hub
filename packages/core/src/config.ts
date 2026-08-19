@@ -26,7 +26,6 @@ export interface Config {
     topK: number;
     scoreThreshold: number;
     systemPrompt: string;
-    retrievalModel: string;
     chatModel: string;
   };
 }

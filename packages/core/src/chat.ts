@@ -15,7 +15,7 @@ export async function askQuestion(
   const embeddings = await fetch(`${config.setup.ollama.baseUrl.replace(/\/+$/, "")}/api/embed`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ model: config.chat.retrievalModel, input: [question] }),
+    body: JSON.stringify({ model: config.sync.embedModel, input: [question] }),
     signal,
   }).then(async (response) => {
     if (!response.ok) {

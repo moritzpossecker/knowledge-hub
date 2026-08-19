@@ -87,7 +87,6 @@ async function configureChat(rl: readline.Interface, output: NodeJS.WritableStre
   heading(output, "Chat Configuration", "Press Enter to keep the current values.");
 
   config.chat.chatModel = await ask(rl, output, "Chat model for answering questions", config.chat.chatModel);
-  config.chat.retrievalModel = await ask(rl, output, "Retrieval model for searching the index", config.chat.retrievalModel);
 
   subheading(output, "Retrieval Tuning (Advanced)");
 

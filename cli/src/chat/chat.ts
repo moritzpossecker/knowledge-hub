@@ -21,7 +21,7 @@ export async function runChat(
 
   await checkModelsInstalled(
     config.setup.ollama.baseUrl,
-    [config.chat.retrievalModel, config.chat.chatModel],
+    [config.sync.embedModel, config.chat.chatModel],
     input,
     output
   );
